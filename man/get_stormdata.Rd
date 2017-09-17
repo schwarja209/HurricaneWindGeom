@@ -13,5 +13,5 @@ get_stormdata(file = "ebtrk_atlc_1988_2015.txt")
 a data frame with a cleaned version of the input file data
 }
 \description{
-
+This function simply extracts and tidies hurricane wind data from Colorado State University.
 }
