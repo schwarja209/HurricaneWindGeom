@@ -1,0 +1,211 @@
+---
+title: "Graphing Hurricane Winds"
+author: "Jacob Schwartz"
+date: "September 16, 2017"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+The purpose of this project was to demonstrate understanding of the topics covered in the Building Data Visualization Tools course in the Masterin Software Development in R specialization on Coursera, offered by Johns Hopkins University. To do this I created a series of functions that are meant to solve the following problem (as stated in the course):
+
+*"Hurricanes can have asymmetrical wind fields, with much higher winds on one side of a storm compared to the other. Hurricane wind radii report how far winds of a certain intensity (e.g., 34, 50, or 64 knots) extended from a hurricane's center, with separate values given for the northeast, northwest, southeast, and southwest quadrants of the storm. The 34 knot radius in the northeast quadrant, for example, reports the furthest distance from the center of the storm of any location that experienced 34-knot winds in that quadrant.*
+
+*This wind radii data provides a clearer picture of the storm structure than the simpler measurements of a storm's position and maximum winds. For example, if a storm was moving very quickly, the forward motion of the storm might have contributed significantly to wind speeds to the right of the storm's direction of forward motion, and wind radii might be much larger for the northeast quadrant of the storm than the northwest quadrant. These wind radii are available for Atlantic basin tropical storms since 1988 through the Extended Best Track dataset, available [here](http://rammb.cira.colostate.edu/research/tropical_cyclones/tc_extended_best_track_dataset/)."*
+
+
+##Approach
+
+There are 2 functions in this project that can be used to construct the relevant geom for mapping the wind intensity data.
+
+- `geocode_radii(point,arc,radius,conv,scale)` takes locational data and wind distances, and geocodes points on which the resulting polygons for mapping are based.
+- `geom_hurricane()` creates a layer on a `ggplot2` or `ggmap` output, displaying a hurricane wind geom.
+
+They are both in the `Wind_Radii_Geom.R` file in the `R\` folder. Also included in the same file is the `ggproto` object `GeomHurricane`, which is the construction of the hurricane wind geom itself.
+
+There is also a separate function for extracting and tidying the specific data used for testing the geom functions, called `get_stormdata(file)`. The test data used needed quite a bit of cleaning and sorting, so for details on how that was accomplished, please look at this function and its accompanying documentation.
+
+Finally, all of these functions and objects were built using a plethora of libraries. They are listed below, and will need to be installed on your system prior to running the functions.
+
+```{r libraries, results="hide", message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lubridate)
+library(geosphere)
+library(ggplot2)
+library(grid)
+library(ggmap)
+```
+
+```{r ExtractandTidy, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+get_stormdata<-function(file="./data-raw/ebtrk_atlc_1988_2015.txt"){
+    ext_tracks_widths<-c(7,10,2,2,3,5,5,6,4,5,4,4,5,3,4,3,3,3,4,3,3,3,4,3,3,3,2,6,1) #pre-formatting
+    
+    ext_tracks_colnames<-c("storm_id","storm_name","month","day","hour","year","latitude","longitude",
+                           "max_wind","min_pressure","rad_max_wind","eye_diameter","pressure_1","pressure_2",
+                           paste("radius_34",c("ne","se","sw","nw"),sep="_"),
+                           paste("radius_50",c("ne","se","sw","nw"),sep="_"),
+                           paste("radius_64",c("ne","se","sw","nw"),sep="_"),
+                           "storm_type","distance_to_land","final")
+    
+    ext_tracks<-readr::read_fwf(file,readr::fwf_widths(ext_tracks_widths,ext_tracks_colnames),na="-99")
+    
+    ext_tracks_cleaned<-ext_tracks%>%
+        dplyr::mutate(storm_id=paste0(stringr::str_to_title(storm_name),"-",year), #create storm id with year
+                      longitude=180-((longitude+180)%%360), #change longitude to different scale
+                      date=lubridate::ymd_h(paste(year,month,day,hour,sep="_")))%>% #condense date/time info
+        dplyr::select(storm_id,date,latitude,longitude,radius_34_ne:radius_64_nw)%>%
+        tidyr::gather(key=variable,value=radius,dplyr::starts_with("radius"))%>% #condense wind radius info
+        #split wind speed from distance
+        tidyr::separate(col=variable,into=c("suffix","wind_speed","quadrant"),sep="_")%>% 
+        tidyr::spread(key=quadrant,value=radius)%>% #spread distance info out again
+        dplyr::select(-suffix)
+    
+    return(ext_tracks_cleaned)
+}
+
+ext_tracks_cleaned<-get_stormdata()
+```
+
+```{r geocode_func, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+geocode_radii<-function(point,arc=0:360,radius=1,conv=1,scale=1){
+    #generates polyon point projections
+    polygon_points<-geosphere::destPoint(p=point,b=arc,d=radius*conv*scale) 
+    data<-data.frame(x=c(polygon_points[,"lon"],point[1]), #save polygon point projections to a dataframe
+                     y=c(polygon_points[,"lat"],point[2]))
+    return(data)
+}
+```
+
+```{r Geom, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+GeomHurricane<-ggplot2::ggproto("GeomHurricane",ggplot2::Geom,
+                                #required input parameters
+                                required_aes=c("x","y","r_ne","r_se","r_sw","r_nw"), 
+                                #additional parameters
+                                default_aes=ggplot2::aes(fill="grey",color="black",size=0.5, 
+                                                         alpha=0.8,linetype=1,scale_radii=1),
+                                draw_key=ggplot2::draw_key_polygon, #ensures that legend is included
+                                draw_group = function(data,panel_scales,coord){
+                                    
+                                    point<-c(data[1,]$x,data[1,]$y) #initialize parameters
+                                    scale_radii<-data[1,]$scale_radii
+                                    naut<-1852
+                                    
+                                    #get geocodes polygon projections
+                                    data_ne<-geocode_radii(point,0:90,data[1,]$r_ne,naut,scale_radii) 
+                                    data_se<-geocode_radii(point,90:180,data[1,]$r_se,naut,scale_radii)
+                                    data_sw<-geocode_radii(point,180:270,data[1,]$r_sw,naut,scale_radii)
+                                    data_nw<-geocode_radii(point,270:360,data[1,]$r_nw,naut,scale_radii)
+                                    
+                                    #combine 4 quadrants into one polygon projection
+                                    data_compass<-rbind(data_ne,data_se,data_sw,data_nw) 
+                                    coords<-coord$transform(data_compass,panel_scales)
+                                    
+                                    color<-data[1,]$color #initialize additional parameters
+                                    fill<-data[1,]$fill
+                                    alpha<-data[1,]$alpha
+                                    
+                                    #build polygon and fill in sections
+                                    grid::polygonGrob(x=coords$x,y=coords$y, 
+                                                      gp=grid::gpar(col=color,fill=fill,alpha=alpha))
+                                })
+```
+
+```{r Geom_Layer, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+geom_hurricane<-function(mapping=NULL,data=NULL,stat="identity",position="identity",
+                         show.legend=NA,inherit.aes=TRUE,na.rm=FALSE,...){
+    #create geom layer
+    ggplot2::layer(geom=GeomHurricane,mapping=mapping,data=data,stat=stat,position=position,
+                   show.legend=show.legend,inherit.aes=inherit.aes,params=list(na.rm=na.rm,...))
+}
+```
+
+
+##Examples
+
+Below are several examples of the functionality provided by this project, using data from Hurricane Ike. The first and second maps show the hurricane at the same point in time; however, the second map is simply scaled down using the `scale_radii` aesthetic.
+
+The final map shows the versatility of the functions provided by mapping the entire route of Hurricane Ike, using the noon locations from each day of its existance.
+
+The relevant code to create these maps is also shown.  
+
+
+###**- Hurricane Ike's wind speed map at noon on September 9th, 2012**
+
+```{r example1, fig.width=12, fig.height=12, message=FALSE, warning=FALSE, cache=TRUE}
+Ike_sample<-ext_tracks_cleaned%>% #subset for data for first two graphs
+    dplyr::filter(storm_id=="Ike-2008",date==lubridate::ymd_hms("2008-09-12 12:00:00"))%>%
+    dplyr::arrange(date,wind_speed)%>%
+    dplyr::mutate(id=1:n()) #for grouping if necessary
+
+Ike_location<-unique(c(Ike_sample$longitude,Ike_sample$latitude)) #find lat and lng, so no guessing
+
+#base map
+Ike_base2<-ggmap::get_map(location=c(lon=Ike_location[1],lat=Ike_location[2]),zoom=6,maptype="toner-background")
+
+#full map 1
+map2<-Ike_base2%>%ggmap::ggmap(extent="device")+
+    geom_hurricane(data=Ike_sample,
+                   ggplot2::aes(x=longitude,y=latitude,r_ne=ne,r_se=se,r_nw=nw,r_sw=sw,
+                                fill=wind_speed,color=wind_speed,group=id))+
+    ggplot2::scale_color_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))+
+    ggplot2::scale_fill_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))
+
+map2
+```
+
+
+###**- Hurricane Ike's wind speed map at noon on September 9th, 2012, with it's radius reduced to half**
+
+```{r example2, fig.width=12, fig.height=12, message=FALSE, warning=FALSE, cache=TRUE}
+#full map 2
+map3<-Ike_base2%>%ggmap::ggmap(extent="device")+
+    geom_hurricane(data=Ike_sample,
+                   ggplot2::aes(x=longitude,y=latitude,r_ne=ne,r_se=se,r_nw=nw,r_sw=sw,
+                                fill=wind_speed,color=wind_speed,group=id,scale_radii=0.5))+
+    ggplot2::scale_color_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))+
+    ggplot2::scale_fill_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))
+
+map3
+```
+
+
+###**- Whole path of the Hurricane Ike at noon on each day it was active**
+
+```{r example3, fig.width=12, fig.height=12, message=FALSE, warning=FALSE, cache=TRUE}
+Ike_track<-ext_tracks_cleaned%>% #subset for several outputs, to show path
+    dplyr::filter(storm_id=="Ike-2008",lubridate::hour(date)==18,latitude<40)%>%
+    dplyr::arrange(date,wind_speed) %>%
+    dplyr::mutate(id=1:n())
+
+#this base map did require some guessing, since we don't have a single output
+Ike_base1<-ggmap::get_map(location=c(lon=-70,lat=25),zoom=4,maptype="toner-background")
+
+#full map 3
+map1<-Ike_base1%>%ggmap::ggmap(extent="device")+
+    geom_hurricane(data=Ike_track,
+                   ggplot2::aes(x=longitude,y=latitude,r_ne=ne,r_se=se,r_nw=nw,r_sw=sw,
+                                fill=wind_speed,color=wind_speed,group=id))+
+    ggplot2::scale_color_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))+
+    ggplot2::scale_fill_manual(name="Wind speed (kts)",values=c("red","orange","yellow"))
+
+map1
+```
+
+
+##Appendix
+
+This geom and this readme were created during an RStudio session with the following specs:
+```{r appendix}
+sessionInfo()
+```

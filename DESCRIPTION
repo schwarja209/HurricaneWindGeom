@@ -1,0 +1,28 @@
+Package: HurricaneWindGeom
+Type: Package
+Title: Provides Tools to Create a Geom Showing Wind Radii for Hurricane
+Version: 0.1.0
+Author: Jacob Schwartz
+Maintainer: Jacob Schwartz <schwarja209@gmail.com>
+Description: The purpose of this project was to demonstrate understanding of the topics covered in
+    the Building Data Visualization Tools course in the Masterin Software Development in R
+    specialization on Coursera, offered by Johns Hopkins University. To do this I created a series
+    of functions that are meant to solve the following problem (as stated in the course): "Hurricanes can have asymmetrical wind fields, with much higher winds on one side of a storm
+    compared to the other. Hurricane wind radii report how far winds of a certain intensity (e.g.,
+    34, 50, or 64 knots) extended from a hurricane's center, with separate values given for the
+    northeast, northwest, southeast, and southwest quadrants of the storm. The 34 knot radius in
+    the northeast quadrant, for example, reports the furthest distance from the center of the storm
+    of any location that experienced 34-knot winds in that quadrant. This wind radii data provides a clearer picture of the storm structure than the simpler
+    measurements of a storm's position and maximum winds. For example, if a storm was moving very
+    quickly, the forward motion of the storm might have contributed significantly to wind speeds
+    to the right of the storm's direction of forward motion, and wind radii might be much larger
+    for the northeast quadrant of the storm than the northwest quadrant. These wind radii are
+    available for Atlantic basin tropical storms since 1988 through the Extended Best Track dataset,
+    available [here](http://rammb.cira.colostate.edu/research/tropical_cyclones/tc_extended_best_track_dataset/)."
+Imports: readr, magrittr, dplyr, tidyr, stringr, lubridate, geosphere, ggplot2, grid, ggmap
+Suggests: knitr, rmarkdown, testthat
+URL: https://github.com/schwarja209/HurricaneWindGeom
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1

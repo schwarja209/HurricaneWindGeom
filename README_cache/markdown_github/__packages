@@ -1,0 +1,11 @@
+base
+readr
+dplyr
+tidyr
+stringr
+lubridate
+sp
+geosphere
+ggplot2
+ggmap
+bindrcpp
