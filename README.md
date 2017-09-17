@@ -1,3 +1,6 @@
+Graphing and Mapping Hurricane Winds
+====================================
+
 The purpose of this project was to demonstrate understanding of the topics covered in the Building Data Visualization Tools course in the Masterin Software Development in R specialization on Coursera, offered by Johns Hopkins University. To do this I created a series of functions that are meant to solve the following problem (as stated in the course):
 
 *"Hurricanes can have asymmetrical wind fields, with much higher winds on one side of a storm compared to the other. Hurricane wind radii report how far winds of a certain intensity (e.g., 34, 50, or 64 knots) extended from a hurricane's center, with separate values given for the northeast, northwest, southeast, and southwest quadrants of the storm. The 34 knot radius in the northeast quadrant, for example, reports the furthest distance from the center of the storm of any location that experienced 34-knot winds in that quadrant.*
@@ -130,9 +133,9 @@ sessionInfo()
 #> [8] base     
 #> 
 #> other attached packages:
-#>  [1] bindrcpp_0.2    ggmap_2.6.1     ggplot2_2.2.1   geosphere_1.5-5
-#>  [5] sp_1.2-5        lubridate_1.6.0 stringr_1.2.0   tidyr_0.7.1    
-#>  [9] dplyr_0.7.3     readr_1.1.1    
+#> [1] ggmap_2.6.1     ggplot2_2.2.1   geosphere_1.5-5 sp_1.2-5       
+#> [5] lubridate_1.6.0 stringr_1.2.0   tidyr_0.7.1     dplyr_0.7.3    
+#> [9] readr_1.1.1    
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] Rcpp_0.12.12      compiler_3.4.1    plyr_1.8.4       
@@ -140,12 +143,12 @@ sessionInfo()
 #>  [7] evaluate_0.10.1   tibble_1.3.4      gtable_0.2.0     
 #> [10] lattice_0.20-35   pkgconfig_2.0.1   png_0.1-7        
 #> [13] rlang_0.1.2       mapproj_1.2-5     yaml_2.1.14      
-#> [16] proto_1.0.0       knitr_1.17        maps_3.2.0       
-#> [19] RgoogleMaps_1.4.1 hms_0.3           rprojroot_1.2    
-#> [22] glue_1.1.1        R6_2.2.2          jpeg_0.1-8       
-#> [25] rmarkdown_1.6     reshape2_1.4.2    purrr_0.2.3      
-#> [28] magrittr_1.5      codetools_0.2-15  backports_1.1.0  
+#> [16] proto_1.0.0       bindrcpp_0.2      knitr_1.17       
+#> [19] maps_3.2.0        RgoogleMaps_1.4.1 hms_0.3          
+#> [22] rprojroot_1.2     glue_1.1.1        R6_2.2.2         
+#> [25] jpeg_0.1-8        rmarkdown_1.6     reshape2_1.4.2   
+#> [28] purrr_0.2.3       magrittr_1.5      backports_1.1.0  
 #> [31] scales_0.5.0      htmltools_0.3.6   assertthat_0.2.0 
-#> [34] colorspace_1.3-2  labeling_0.3      stringi_1.1.5    
-#> [37] lazyeval_0.2.0    munsell_0.4.3     rjson_0.2.15
+#> [34] colorspace_1.3-2  stringi_1.1.5     lazyeval_0.2.0   
+#> [37] munsell_0.4.3     rjson_0.2.15
 ```

@@ -15,6 +15,9 @@ knitr::opts_chunk$set(
 )
 ```
 
+Graphing and Mapping Hurricane Winds
+====================================
+
 The purpose of this project was to demonstrate understanding of the topics covered in the Building Data Visualization Tools course in the Masterin Software Development in R specialization on Coursera, offered by Johns Hopkins University. To do this I created a series of functions that are meant to solve the following problem (as stated in the course):
 
 *"Hurricanes can have asymmetrical wind fields, with much higher winds on one side of a storm compared to the other. Hurricane wind radii report how far winds of a certain intensity (e.g., 34, 50, or 64 knots) extended from a hurricane's center, with separate values given for the northeast, northwest, southeast, and southwest quadrants of the storm. The 34 knot radius in the northeast quadrant, for example, reports the furthest distance from the center of the storm of any location that experienced 34-knot winds in that quadrant.*
